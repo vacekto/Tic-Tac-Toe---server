@@ -10,17 +10,18 @@ const PORT = 3001;
 app.use(cors());
 
 io.on('connection', function (socket) {
+
   socket.on("createGame", () => {
       createGame(socket.id);
     })    
   
-
   socket.on("joinGame", id => {
     const game =getGame(id);
     if (game && socket.id !== game.host){     
       joinGame(id, socket.id)
       socket.join(id);
-      io.to(id).emit("startGame");
+      socket.emit("joinedGame");
+      socket.to(id).emit("createdGame");
     } else {
       socket.emit("invsalid input");      
     }
@@ -31,7 +32,7 @@ io.on('connection', function (socket) {
     socket.to(room).emit("update", data);
   })
 
-  socket.on("I won", (data) => {
+  socket.on("I won", data => {
     const room = getRoom(socket.rooms, socket.id);
     socket.to(room).emit("opponent won", data);
   })
@@ -39,6 +40,11 @@ io.on('connection', function (socket) {
   socket.on("play again", () => {
     const room = getRoom(socket.rooms, socket.id);
     socket.to(room).emit("play again");
+  })
+
+  socket.on("sendMessage", message => {
+    const room = getRoom(socket.rooms, socket.id);
+    socket.to(room).emit("receiveMessage", message);
   })
 
   socket.on("opponent left", () => {
