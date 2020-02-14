@@ -6,18 +6,16 @@ const cors =require("cors");
 const {getGame, createGame, deleteGame, joinGame, getRoom} = require("./games.js")
  
 const PORT = 3001;
-
 app.use(cors());
 
 io.on('connection', function (socket) {
-
   socket.on("createGame", () => {
       createGame(socket.id);
     })    
   
   socket.on("joinGame", id => {
     const game =getGame(id);
-    if (game && socket.id !== game.host){     
+    if (game && socket.id !== game.host){  
       joinGame(id, socket.id)
       socket.join(id);
       socket.emit("joinedGame");
@@ -48,18 +46,29 @@ io.on('connection', function (socket) {
   })
 
   socket.on("opponent left", () => {
+    const game = getGame(socket.id);
     const room = getRoom(socket.rooms, socket.id);
     socket.to(room).emit("opponent left");
-    deleteGame(socket.id);
+    if (game){
+      if (game.guest === socket.id){
+        socket.leave(`${room}`);
+      }
+      deleteGame(socket.id);
+    }
   })
 
   socket.on("disconnect", () => {
-    if (getGame(socket.id)){
-      io.in(getGame(socket.id).host).emit("opponent left");
+    const game = getGame(socket.id);
+    if (game){
+      io.in(game.host).emit("opponent left");
+      if (game.guest === socket.id){
+        socket.leave(game.host);
+      }
       deleteGame(socket.id);
     }
   })
 });
+
 
 
 server.listen(process.env.PORT || 5000, () => console.log(`listening on ${PORT}`));
