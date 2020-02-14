@@ -11,6 +11,7 @@ app.use(cors());
 io.on('connection', function (socket) {
   socket.on("createGame", () => {
       createGame(socket.id);
+      socket.join(id);
     })    
   
   socket.on("joinGame", id => {
