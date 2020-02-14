@@ -49,16 +49,19 @@ io.on('connection', function (socket) {
     const game = getGame(socket.id);
     const room = getRoom(socket.rooms, socket.id);
     socket.to(room).emit("opponent left");
-    if (game){
-      if (game.guest === socket.id){
-        socket.leave(`${room}`);
-      }
-      deleteGame(socket.id);
-    }
+    socket.leave(room);
+    deleteGame(socket.id);
+    
+  })
+
+  socket.on("leave", () => {
+    const room = getRoom(socket.rooms, socket.id);
+    socket.leave(room);
   })
 
   socket.on("disconnect", () => {
     const game = getGame(socket.id);
+    
     if (game){
       io.in(game.host).emit("opponent left");
       if (game.guest === socket.id){
